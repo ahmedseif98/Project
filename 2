@@ -1,0 +1,28 @@
+re = (4 * m) / (3.14 * (2 * 0.016) * 0.00311)
+
+if re <= 2300:
+    nu = 4.36
+elif re >= 10000:
+    nu = 0.023* pow(re, 0.8)  * pow(((3870 * 0.00311) / 0.4), 0.333333)
+else:
+    nu = (0.0149 * re) + 4.356
+
+# 0.4 is from internet
+hf = (nu * 0.4) / (2 * 0.013)
+
+R_p = 1 / 2 * 3.14 * 0.391 * math.log(0.016 / 0.013) + 1 / (2* 3.14 * 0.013 * hf)
+
+#########################
+# rb radius of borehole itself 12cm brehole 0.065
+# 8cm between legs 0.04
+sigma = (1.69 - 2.635) / (1.69 + 2.635)
+R_bp = (1 / (4 * 3.14 * 1.69)) * math.log((pow(0.065, 2) / 2 * 0.04 * 0.016) * pow(pow(0.065, 4) / (pow(0.065, 4) - pow(0.04, 4)), sigma))
+
+
+
+
+R_b = R_p / N_l + R_bp # thermal resistance model
+
+
+
+print("R_b= ", R_b, " k/W")

@@ -1,0 +1,87 @@
+import numpy as np
+from scipy.integrate import quad
+from scipy.special import erfc
+import math
+
+
+# Borehole Informations
+N = 9         # number of boreholes
+num_in_line = int(np.sqrt(N))
+
+H = 10        # depth of the borehole in meters, we keep changing
+db = 1         # distance from one hole to another
+# D = 1         # diameter of the borehole in meters , we need to recheck #
+z = H / 2     # midpoint depth of the borehole
+Ti = 17       # initial ground temperature in degrees Celsius
+
+# bore diameter 0.127 so rb = 0.0635
+
+# water+20% ethylenglycol mixture (and why this mixture)
+c_p_ground_fluid = 3.870         # kJ/kgK
+d_vis_ground_fluid = 0.00311     # dynamic_viscosity  Pa.s
+raw_ground_fluid = 1036          # density kg/m3
+
+#### HEAT PUMP #### # 20STB-V90WHT(O/C)4 #
+# Q_h = 271632                              # kW, heat extraction rate
+delta_t = 5                                 # temperature difference
+Q_c_nominal = 335                           # kW, nominal heat extraction rate
+W = 72                                      # kW, power input
+COP = Q_c_nominal / W                       # coefficient of performance
+Q_e = Q_c_nominal - W                       # Q evaporator
+m = Q_e / (c_p_ground_fluid * delta_t)      # mass flow rate of water in kg/s
+
+alpha_s = 2.635         # alpha, thermal conductivity of the ground
+t = 1               # time
+N_l = 2             # Nl equals to 2 for a single U-tube borehole
+
+########################################################################################################
+
+def trouvej1j2(j):
+    array_1d = np.arange(1, N + 1)
+    table = array_1d.reshape((num_in_line, num_in_line))
+    for i in range(len(table)):
+        for k in range(len(table)):
+            if table[i,k] == j:
+                return [i,k]
+
+# j is the hole id
+def calculr(j):
+    tableau = np.zeros((num_in_line, num_in_line))
+    [a,b] = trouvej1j2(j)
+    for i in range (len(tableau)):
+        for k in range(len(tableau)):
+            tableau[i,k] = db * np.sqrt((i - a)**2 + (b - k)**2)
+
+    return tableau
+
+
+# # Define the function fun
+def fun(x):
+    term1 = erfc(np.sqrt(r * r + (H / 2 - x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 - x) ** 2)
+    term2 = erfc(np.sqrt(r * r + (H / 2 + x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 + x) ** 2)
+    return term1 - term2
+
+
+
+
+# Calculate q_m
+q_m =  (Q_c_nominal * (1- (1/COP))) / (N * H)  # kW/m, heat recevied in one length of one borehole
+
+
+
+j = 1
+tableau = calculr(j)
+t0 = 17
+T_final = t0
+
+for row in tableau:
+    for r in row:
+        if not r == 0.0:
+            # Perform the integration
+            G, _ = quad(fun, 0, H)
+            G /= 2
+            
+            T_b_j_m_delta = (- q_m / (2 * math.pi * alpha_s)) * G
+            T_final += T_b_j_m_delta
+
+print(T_final)

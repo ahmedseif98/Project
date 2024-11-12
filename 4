@@ -10,7 +10,7 @@ import math
 # Inputs
 H = 150                          # m, depth of the borehole
 N = 100                         # number of boreholes
-t_list_num = list(range(1, 30+1))
+t_list_num = list(range(1, 1+1))
 t_list_val = [x * 2678400 * 12 for x in t_list_num]
 print(t_list_val)
 T_fl_in_list = []
@@ -24,7 +24,7 @@ r_o = 0.04216                   # m, outer radius of the pipe
 r_i = 0.03399                   # m, inner radius of the pipe
 r_b = 0.1524                    # m, radius of the borehole
 x_c = 0.05                      # m, half-spacing between legs
-db = 6                          # m, distance between one borehole and another
+db = 8                          # m, distance between one borehole and another
 lambda_p = 0.391                # W/mk, thermal conductivity of the pipe
 
 lambda_s = 2.635                # W/mk, thermal conductivity of the ground
@@ -38,7 +38,8 @@ lambda_f = 0.36                 # W/mk, assumed, thermal conducitivity of the fl
 meu_f = 0.00311                 # Pa.s, dynamic viscosity of the fluid
 raw_f = 1036                    # kg/m3, density of the fluid
 
-Q_c = 271632                    # W, actual heat extraction rate
+# Q_c = 271632                    # W, actual heat extraction rate
+Q_c = 678855  # W.s
 delta_t = 5                     # temperature difference
 Q_c_nominal = 335000            # W, nominal heat extraction rate
 W = 72000                       # W, power input
@@ -108,7 +109,7 @@ R_bp = (1 / (4 * math.pi * lambda_b)) * ln_function
 
 # Calculate total thermal resistance
 R_b = R_p / N_l + R_bp
-print("R_b = ", R_b, " k/W")
+# print("R_b = ", R_b, " k/W")
 
 ##############################################################################################
 
@@ -119,9 +120,9 @@ for t in t_list_val:
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
     # Calculate q_m
-    q_m =  (Q_c * (1- (1/COP))) / (N * H)  # W/m, heat recevied in one length of one borehole
-    print("q_m = ", q_m, " W/m")
-    print('--------------------')
+    q_m =  (Q_c * 1000 * (1- (1/COP))) / (8760 * N * H)  # W/m, heat recevied in one length of one borehole
+    # print("q_m = ", q_m, " W/m")
+    # print('--------------------')
 
     T_fl_tot_o = 0
     for j in range(1, N+1):
@@ -130,12 +131,14 @@ for t in t_list_val:
 
         for row in tableau:
             for r in row:
-                if not r == 0.0:
-                    # Perform the integration
-                    G, _ = quad(fun, 0, H, args=(r,t,))
-                    G /= 2
-                    T_b_j_m_delta = (- q_m / (2 * math.pi * lambda_s)) * G
-                    T_b_j += T_b_j_m_delta
+                if r == 0.0:
+                    r = r_b
+
+                # Perform the integration
+                G, _ = quad(fun, 0, H, args=(r,t,))
+                G /= 2
+                T_b_j_m_delta = (- q_m / (2 * math.pi * lambda_s)) * G
+                T_b_j += T_b_j_m_delta
 
         print("T_b_j = ", T_b_j, " C")
 
@@ -148,12 +151,12 @@ for t in t_list_val:
 
 
     T_fl_o =  T_fl_tot_o / N
-    print("T_fl_o = ", T_fl_o, " C")
+    # print("T_fl_o = ", T_fl_o, " C")
 
-    T_fl_in =  T_fl_o - delta_t
-    print("T_fl_in = ", T_fl_in, " C")
+    # T_fl_in =  T_fl_o - delta_t
+    # print("T_fl_in = ", T_fl_in, " C")
 
-    T_fl_in_list.append(T_fl_in)
+    T_fl_in_list.append(T_fl_o)
     
 
 print(T_fl_in_list)

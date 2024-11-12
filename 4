@@ -1,0 +1,165 @@
+from scipy.integrate import quad
+from scipy.special import erfc
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+
+
+# Define Parameters
+
+# Inputs
+H = 150                          # m, depth of the borehole
+N = 100                         # number of boreholes
+t_list_num = list(range(1, 30+1))
+t_list_val = [x * 2678400 * 12 for x in t_list_num]
+print(t_list_val)
+T_fl_in_list = []
+
+num_in_line = int(np.sqrt(N))   # number of boreholes in one side of the square
+z = H / 2                       # midpoint depth of the borehole
+
+Ti = 17                         # C, [undistributed] initial ground temperature 
+N_l = 2                         # no of legs in a borehole (Single U-tube)
+r_o = 0.04216                   # m, outer radius of the pipe
+r_i = 0.03399                   # m, inner radius of the pipe
+r_b = 0.1524                    # m, radius of the borehole
+x_c = 0.05                      # m, half-spacing between legs
+db = 6                          # m, distance between one borehole and another
+lambda_p = 0.391                # W/mk, thermal conductivity of the pipe
+
+lambda_s = 2.635                # W/mk, thermal conductivity of the ground
+alpha_s = 0.00000123            # m2/s, thermal diffusivity of the ground
+
+lambda_b = 1.69                 # m2/s, thermal diffusivity of the grout
+
+
+cp_f = 3870                     # J/kgK, specific heat capacity of the fluid
+lambda_f = 0.36                 # W/mk, assumed, thermal conducitivity of the fluid
+meu_f = 0.00311                 # Pa.s, dynamic viscosity of the fluid
+raw_f = 1036                    # kg/m3, density of the fluid
+
+Q_c = 271632                    # W, actual heat extraction rate
+delta_t = 5                     # temperature difference
+Q_c_nominal = 335000            # W, nominal heat extraction rate
+W = 72000                       # W, power input
+COP = Q_c_nominal / W           # coefficient of performance
+Q_e = (Q_c * (1- (1/COP)))      # W, Q evaporator
+m = Q_e / (cp_f * delta_t)      # kg/s, mass flow rate of water
+
+
+# Define functions
+
+def trouvej1j2(j):
+    array_1d = np.arange(1, N + 1)
+    table = array_1d.reshape((num_in_line, num_in_line))
+    for i in range(len(table)):
+        for k in range(len(table)):
+            if table[i,k] == j:
+                return [i,k]
+
+# j is the hole id
+def calculr(j):
+    tableau = np.zeros((num_in_line, num_in_line))
+    [a,b] = trouvej1j2(j)
+    for i in range (len(tableau)):
+        for k in range(len(tableau)):
+            tableau[i,k] = db * np.sqrt((i - a)**2 + (b - k)**2)
+
+    return tableau
+
+
+# # Define the function fun
+def fun(x, r, t):
+    term1 = erfc(np.sqrt(r * r + (H / 2 - x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 - x) ** 2)
+    term2 = erfc(np.sqrt(r * r + (H / 2 + x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 + x) ** 2)
+    return term1 - term2
+
+
+##############################################################################################
+# FIND THE TOTAL THERMAL RESISTANCE #
+
+# Calculate reynolds number
+re = (4 * m) / (math.pi * (2 * r_i) * meu_f)
+
+# Calculate nusselt number
+if re <= 2300:
+    nu = 4.36
+elif re >= 10000:
+    # Calculate prandtl number
+    pr = (cp_f * meu_f) / lambda_f 
+    nu = 0.023 * pow(re, 0.8)  * pow(pr, (1/3))
+else:
+    nu = (0.0149 * re) + 4.356
+
+# Calculate convective heat transfer coefficient
+hf = (nu * lambda_f) / (2 * r_i)
+
+# Calculate pipe thermal resistance
+R_p_cond = (1 / (2 * math.pi * lambda_p)) * math.log(r_o / r_i) 
+R_p_conv = 1 / (2* math.pi * r_i * hf)
+R_p = R_p_cond + R_p_conv
+
+# Calculate borehole-to-pipe thermal resistance
+sigma = (lambda_b - lambda_s) / (lambda_b + lambda_s)
+ln_function_p1 = pow(r_b, 2) / (2 * x_c * r_o)
+ln_function_p2 = pow(((pow(r_b, 4)) / (pow(r_b, 4) - pow(x_c, 4))), sigma)
+ln_function = math.log(ln_function_p1 * ln_function_p2)
+R_bp = (1 / (4 * math.pi * lambda_b)) * ln_function
+
+# Calculate total thermal resistance
+R_b = R_p / N_l + R_bp
+print("R_b = ", R_b, " k/W")
+
+##############################################################################################
+
+
+
+
+for t in t_list_val:
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+
+    # Calculate q_m
+    q_m =  (Q_c * (1- (1/COP))) / (N * H)  # W/m, heat recevied in one length of one borehole
+    print("q_m = ", q_m, " W/m")
+    print('--------------------')
+
+    T_fl_tot_o = 0
+    for j in range(1, N+1):
+        tableau = calculr(j)
+        T_b_j = Ti
+
+        for row in tableau:
+            for r in row:
+                if not r == 0.0:
+                    # Perform the integration
+                    G, _ = quad(fun, 0, H, args=(r,t,))
+                    G /= 2
+                    T_b_j_m_delta = (- q_m / (2 * math.pi * lambda_s)) * G
+                    T_b_j += T_b_j_m_delta
+
+        print("T_b_j = ", T_b_j, " C")
+
+
+        T_fl_j_m = T_b_j + q_m * R_b
+        T_fl_j_o = T_fl_j_m + (N * q_m * H) / (2 * m * cp_f)
+        T_fl_tot_o += T_fl_j_o
+        print("T_fl_j_o = ", T_fl_j_o, " C")
+        print('--------------------')
+
+
+    T_fl_o =  T_fl_tot_o / N
+    print("T_fl_o = ", T_fl_o, " C")
+
+    T_fl_in =  T_fl_o - delta_t
+    print("T_fl_in = ", T_fl_in, " C")
+
+    T_fl_in_list.append(T_fl_in)
+    
+
+print(T_fl_in_list)
+plt.plot(t_list_num, T_fl_in_list)
+
+plt.xlabel('t[years]', fontsize=14)
+plt.ylabel('T_fl_in[C]', fontsize=14)
+plt.savefig('solution.png')
+

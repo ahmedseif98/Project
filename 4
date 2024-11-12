@@ -143,7 +143,7 @@ for t in t_list_val:
         print("T_b_j = ", T_b_j, " C")
 
 
-        T_fl_j_m = T_b_j + q_m * R_b
+        T_fl_j_m = T_b_j - q_m * R_b
         T_fl_j_o = T_fl_j_m + (N * q_m * H) / (2 * m * cp_f)
         T_fl_tot_o += T_fl_j_o
         print("T_fl_j_o = ", T_fl_j_o, " C")

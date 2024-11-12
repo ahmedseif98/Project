@@ -9,8 +9,8 @@ import math
 
 # Inputs
 H = 150                          # m, depth of the borehole
-N = 100                         # number of boreholes
-t_list_num = list(range(1, 1+1))
+N = 49                         # number of boreholes
+t_list_num = list(range(1, 30+1))
 t_list_val = [x * 2678400 * 12 for x in t_list_num]
 print(t_list_val)
 T_fl_in_list = []
@@ -24,7 +24,7 @@ r_o = 0.04216                   # m, outer radius of the pipe
 r_i = 0.03399                   # m, inner radius of the pipe
 r_b = 0.1524                    # m, radius of the borehole
 x_c = 0.05                      # m, half-spacing between legs
-db = 8                          # m, distance between one borehole and another
+db = 10                          # m, distance between one borehole and another
 lambda_p = 0.391                # W/mk, thermal conductivity of the pipe
 
 lambda_s = 2.635                # W/mk, thermal conductivity of the ground
@@ -121,8 +121,8 @@ for t in t_list_val:
 
     # Calculate q_m
     q_m =  (Q_c * 1000 * (1- (1/COP))) / (8760 * N * H)  # W/m, heat recevied in one length of one borehole
-    # print("q_m = ", q_m, " W/m")
-    # print('--------------------')
+    print("q_m = ", q_m, " W/m")
+    print('--------------------')
 
     T_fl_tot_o = 0
     for j in range(1, N+1):

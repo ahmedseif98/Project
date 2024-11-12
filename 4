@@ -8,8 +8,10 @@ import math
 # Define Parameters
 
 # Inputs
-H = 150                          # m, depth of the borehole
-N = 49                         # number of boreholes
+H = 100                          # m, depth of the borehole
+N = 64                         # number of boreholes
+db = 12                          # m, distance between one borehole and another
+
 t_list_num = list(range(1, 30+1))
 t_list_val = [x * 2678400 * 12 for x in t_list_num]
 print(t_list_val)
@@ -24,7 +26,7 @@ r_o = 0.04216                   # m, outer radius of the pipe
 r_i = 0.03399                   # m, inner radius of the pipe
 r_b = 0.1524                    # m, radius of the borehole
 x_c = 0.05                      # m, half-spacing between legs
-db = 10                          # m, distance between one borehole and another
+
 lambda_p = 0.391                # W/mk, thermal conductivity of the pipe
 
 lambda_s = 2.635                # W/mk, thermal conductivity of the ground
@@ -151,12 +153,12 @@ for t in t_list_val:
 
 
     T_fl_o =  T_fl_tot_o / N
-    # print("T_fl_o = ", T_fl_o, " C")
+    print("T_fl_o = ", T_fl_o, " C")
 
-    # T_fl_in =  T_fl_o - delta_t
-    # print("T_fl_in = ", T_fl_in, " C")
+    T_fl_in =  T_fl_o - delta_t
+    print("T_fl_in = ", T_fl_in, " C")
 
-    T_fl_in_list.append(T_fl_o)
+    T_fl_in_list.append(T_fl_in)
     
 
 print(T_fl_in_list)

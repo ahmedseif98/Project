@@ -1,0 +1,24 @@
+
+def calculr(j):
+    tableau = np.zeros((num_in_line, num_in_line))
+    [a,b] = trouvej1j2(j)
+    for i in range (len(tableau)):
+        for k in range(len(tableau)):
+            tableau[i,k] = db * np.sqrt((i - a)**2 + (b - k)**2)
+
+    return tableau
+
+
+
+def fun(x, r, t):
+    term1 = erfc(np.sqrt(r * r + (H / 2 - x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 - x) ** 2)
+    term2 = erfc(np.sqrt(r * r + (H / 2 + x) ** 2) / (2 * np.sqrt(alpha_s * t))) / np.sqrt(r * r + (H / 2 + x) ** 2)
+    return term1 - term2
+
+
+j = 1 # index of the hole
+tableau = calculr(j) # gets the distance of all boreholes to the borehole in question (in this case I chose borehole j=1)
+
+G, _ = quad(fun, 0, H, args=(r,t,)) # integrates using fun function
+G /= 2
+T_b_j_m_delta = (- q_m / (2 * math.pi * lambda_s)) * G
